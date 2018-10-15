@@ -113,7 +113,8 @@ class Parse(object):
                 album_name = '未知专辑'
                 album_id = ''
         else:
-            raise ValueError
+            album_name = '未知专辑'
+            album_id = ''
         return album_name, album_id
 
     @classmethod
@@ -148,18 +149,20 @@ class Parse(object):
             url, quality = Parse.song_url(song)
             if not url:
                 continue
-
-            album_name, album_id = Parse.song_album(song)
-            song_info = {
-                'song_id': song['id'],
-                'artist': Parse.song_artist(song),
-                'song_name': song['name'],
-                'album_name': album_name,
-                'album_id': album_id,
-                'mp3_url': url,
-                'quality': quality
-            }
-            song_info_list.append(song_info)
+            try:
+                album_name, album_id = Parse.song_album(song)
+                song_info = {
+                    'song_id': song['id'],
+                    'artist': Parse.song_artist(song),
+                    'song_name': song['name'] if 'name' in song else '',
+                    'album_name': album_name,
+                    'album_id': album_id,
+                    'mp3_url': url,
+                    'quality': quality
+                }
+                song_info_list.append(song_info)
+            except:
+                pass
         return song_info_list
 
     @classmethod
@@ -343,6 +346,18 @@ class NetEase(object):
         params = dict(
             s=keywords,
             type=stype,
+            offset=offset,
+            total=total,
+            limit=limit
+        )
+        return self.request('POST', path, params).get('result', {})
+
+    # TODO the new api is encrypted
+    def search_song(self, keywords, offset=0, total='true', limit=50):
+        path = '/weapi/cloudsearch/get'
+        params = dict(
+            s=keywords,
+            type=1,
             offset=offset,
             total=total,
             limit=limit
